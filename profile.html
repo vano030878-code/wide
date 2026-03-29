@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="viewport" charset="UTF-8" content="notranslate">
+        <title>profile</title>
+        <link rel="stylesheet" href="css/style.css">
+    </head>
+    <body>
+        <header>
+        <div id="menu-container"></div>
+        </header>
+        <main>
+    <div class="main_profile">
+        <form id="adForm">
+        <div class="phone_title">
+        <input type="text" id="title" placeholder="Заголовок" required>
+        <input type="text" id="contact" placeholder="Контакт (email, телефон...)" required>
+        </div>
+        <textarea id="description" placeholder="Описание" rows="3" required></textarea>
+
+        <h3>Как заполнять описание? Советы:</h3>
+        <div class="recommends">
+            <p>Кто ищет? – представь себя.<br>
+        Что нужно сделать? – перечисли ключевые задачи.<br>
+        Чем вы готовы помочь? – опыт, ресурсы, идеи.<br>
+        Пример: «Я студент, делаю приложение для учёта задач. Нужен фронтенд-разработчик (React) на 2–3 часа в неделю. Могу помочь с бэкендом».</p>
+        </div>
+
+        <div class="insert_file">
+            <input type="file" id="projectImage" accept="image/*">
+            <label for="projectImage" class="label_file">Выбрать изображение</label>
+        </div>
+        
+        <button type="submit">Добавить объявление</button>
+        </form>
+    </div>   
+     <script>
+        // --- функции работы с localStorage ---
+        function LoadAds() {
+            let saved = localStorage.getItem('ads');
+            if (saved) {
+                return JSON.parse(saved);
+            } else {
+                return [];
+            }
+        }
+
+        function saveAds(ads) {
+            localStorage.setItem('ads', JSON.stringify(ads));
+        }
+
+        // --- обработка формы ---
+        document.getElementById('adForm').addEventListener('submit', function(e) {
+            e.preventDefault(); // отменяем перезагрузку страницы
+
+            let title = document.getElementById('title').value.trim();
+            let description = document.getElementById('description').value.trim();
+            let contact = document.getElementById('contact').value.trim();
+            let fileInput = document.getElementById('projectImage');
+            let file = fileInput.files[0];
+
+            if (!title || !description || !contact) {
+                alert('Заполните все поля!');
+                return;
+            }
+
+            // функция, которая добавляет объявление в массив и сохраняет
+            function saveAdWithImage(imageData = null) {
+                let ads = LoadAds();
+                ads.unshift({           // новое объявление – в начало списка
+                    title: title,
+                    description: description,
+                    contact: contact,
+                    image: imageData,
+                    id: Date.now()      // уникальный id для удаления (понадобится позже)
+                });
+                saveAds(ads);
+                document.getElementById('adForm').reset();
+                alert('Объявление добавлено!');
+            }
+
+            if (file) {
+                let reader = new FileReader();
+                reader.onload = function(event) {
+                    saveAdWithImage(event.target.result);
+                };
+                reader.readAsDataURL(file);
+            } else {
+                saveAdWithImage(null);
+            }
+        });
+    </script>
+
+        <div id="footer-container"></div>
+
+        </main>
+        <script src="ads.js"></script>
+    </body>
+</html>

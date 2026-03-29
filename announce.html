@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="viewport" charset="UTF-8">
+        <title>galery</title>
+        <link rel="stylesheet" href="css/style.css">
+    </head>
+    <body>
+        <header>
+            <div id="menu-container"></div>
+        </header>
+        
+        <div class="glav_adsList">
+        <div id="adsList"></div>
+        </div>
+        <!-- <a href="profile.html">Добавить еще объявление</a> -->
+
+        <script>
+        // --- функции работы с localStorage (те же, что в create) ---
+        function LoadAds() {
+            let saved = localStorage.getItem('ads');
+            if (saved) {
+                return JSON.parse(saved);
+            } else {
+                return [];
+            }
+        }
+
+        function saveAds(ads) {
+            localStorage.setItem('ads', JSON.stringify(ads));
+        }
+
+        // --- функция удаления (чтобы можно было удалять прямо из ленты) ---
+        function deleteAdById(id) {
+            let ads = LoadAds();
+            // оставляем только те объявления, у которых id не совпадает
+            let newAds = ads.filter(function(ad) {
+                return ad.id !== id;
+            });
+            saveAds(newAds);
+            renderAds(); // перерисовываем ленту
+        }
+
+        // --- функция отрисовки (с квадратными карточками и заглушкой для картинок) ---
+        function renderAds() {
+            let container = document.getElementById('adsList');
+            container.innerHTML = ''; // очищаем
+
+            let ads = LoadAds();
+
+            if (ads.length == 0) {
+                container.innerHTML = '<p>Пока нет объявлений. <a href="announcements.html">Добавьте первое!</a></p>';
+                return;
+            }
+
+            ads.forEach(function(ad) {
+                let card = document.createElement('div');
+                card.className = 'ad';   // твой класс для карточки
+
+                // изображение или заглушка
+                let imageHtml = '';
+                if (ad.image) {
+                    imageHtml = `<img class="photo" src="${ad.image}" alt="фото">`;
+                } 
+                else {
+                    imageHtml = `<img class="photo" src='zaglushka.png'>`;
+                }
+
+                // текстовая часть
+                let contentHtml = `
+                    <h3 class="title_css">${escapeHtml(ad.title)}</h3>
+                    <div class='phone_describ'>
+                    <p class='description'>${escapeHtml(ad.description)}</p>
+                    <p class="contact">связаться: ${escapeHtml(ad.contact)}</p>
+                    </div>
+                `;
+
+                // кнопка удаления
+                let deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete'
+                deleteBtn.textContent = 'Удалить';
+                deleteBtn.onclick = function() {
+                    deleteAdById(ad.id);
+                };
+                let btnContainer = document.createElement('div');
+                btnContainer.className = 'button-container';   // задаём класс
+                btnContainer.appendChild(deleteBtn);
+                // собираем карточку
+                card.innerHTML = imageHtml + `<div class="ad-content">${contentHtml}</div>`;
+                card.appendChild(btnContainer);
+                container.appendChild(card);
+            });
+        }
+
+        // простая защита от XSS
+        function escapeHtml(text) {
+            let div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // при загрузке страницы показываем объявления
+        renderAds();
+    </script>
+
+        <div id="footer-container"></div>
+
+        </main>
+        <script src="ads.js"></script>
+    </body>
+</html>

@@ -17,39 +17,45 @@
 
         <script>
         // --- функции работы с localStorage (те же, что в create) ---
-        function LoadAds() {
-            let saved = localStorage.getItem('ads');
-            if (saved) {
-                return JSON.parse(saved);
-            } else {
-                return [];
-            }
+        // function LoadAds() {
+        //     let saved = localStorage.getItem('ads');
+        //     if (saved) {
+        //         return JSON.parse(saved);
+        //     } else {
+        //         return [];
+        //     }
+        // }
+
+        // function saveAds(ads) {
+        //     localStorage.setItem('ads', JSON.stringify(ads));
+        // }
+
+
+
+        async function deleteAdById(id) {
+            if (!confirm('Удалить это объявление')) return
+
+            await fetch(`http://127.0.0.1:5000/messages/${id}`, {
+                method: 'DELETE'
+            })
+
+            renderAds()
         }
 
-        function saveAds(ads) {
-            localStorage.setItem('ads', JSON.stringify(ads));
-        }
 
-        // --- функция удаления (чтобы можно было удалять прямо из ленты) ---
-        function deleteAdById(id) {
-            let ads = LoadAds();
-            // оставляем только те объявления, у которых id не совпадает
-            let newAds = ads.filter(function(ad) {
-                return ad.id !== id;
-            });
-            saveAds(newAds);
-            renderAds(); // перерисовываем ленту
-        }
 
-        // --- функция отрисовки (с квадратными карточками и заглушкой для картинок) ---
-        function renderAds() {
+        async function renderAds() {
             let container = document.getElementById('adsList');
-            container.innerHTML = ''; // очищаем
+            container.innerHTML = '<p>Загрузка объявлений...</p>'; // очищаем
 
-            let ads = LoadAds();
+            try {
+                const response = await fetch('http://127.0.0.1:5000/messages');
+                const ads = await response.json()
 
-            if (ads.length == 0) {
-                container.innerHTML = '<p>Пока нет объявлений. <a href="announcements.html">Добавьте первое!</a></p>';
+                container.innerHTML = ''
+
+                   if (ads.length == 0) {
+                container.innerHTML = '<p>Пока нет объявлений. <a href="profile.html">Добавьте первое!</a></p>';
                 return;
             }
 
@@ -90,6 +96,9 @@
                 card.appendChild(btnContainer);
                 container.appendChild(card);
             });
+            } catch (error) {
+                container.innerHTML = '<p style="color:red">Ошибка загрузки. Проверь сервер!</p>';
+            };
         }
 
         // простая защита от XSS

@@ -34,65 +34,72 @@
         <button type="submit">Добавить объявление</button>
         </form>
     </div>   
-     <script>
-        // --- функции работы с localStorage ---
-        function LoadAds() {
-            let saved = localStorage.getItem('ads');
-            if (saved) {
-                return JSON.parse(saved);
-            } else {
-                return [];
-            }
+    <script>
+    // --- Обработка формы ---
+    document.getElementById('adForm').addEventListener('submit', function(e) {
+        e.preventDefault(); // Отменяем перезагрузку страницы
+
+        // 1. Собираем данные из полей
+        let title = document.getElementById('title').value.trim();
+        let description = document.getElementById('description').value.trim();
+        let contact = document.getElementById('contact').value.trim();
+        let fileInput = document.getElementById('projectImage');
+        let file = fileInput.files[0];
+
+        if (!title || !description || !contact) {
+            alert('Заполните все поля!');
+            return;
         }
 
-        function saveAds(ads) {
-            localStorage.setItem('ads', JSON.stringify(ads));
-        }
+        // 2. Функция, которая отправляет данные в Python (наш API)
+        async function sendAdToPython(imageData = null) {
+            const adData = {
+                title: title,
+                description: description,
+                contact: contact,
+                image: imageData
+            };
 
-        // --- обработка формы ---
-        document.getElementById('adForm').addEventListener('submit', function(e) {
-            e.preventDefault(); // отменяем перезагрузку страницы
-
-            let title = document.getElementById('title').value.trim();
-            let description = document.getElementById('description').value.trim();
-            let contact = document.getElementById('contact').value.trim();
-            let fileInput = document.getElementById('projectImage');
-            let file = fileInput.files[0];
-
-            if (!title || !description || !contact) {
-                alert('Заполните все поля!');
-                return;
-            }
-
-            // функция, которая добавляет объявление в массив и сохраняет
-            function saveAdWithImage(imageData = null) {
-                let ads = LoadAds();
-                ads.unshift({           // новое объявление – в начало списка
-                    title: title,
-                    description: description,
-                    contact: contact,
-                    image: imageData,
-                    id: Date.now()      // уникальный id для удаления (понадобится позже)
+            try {
+                // Отправляем POST-запрос на наш сервер
+                const response = await fetch('http://127.0.0.1:5000/messages', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(adData) // Превращаем объект в строку JSON
                 });
-                saveAds(ads);
-                document.getElementById('adForm').reset();
-                alert('Объявление добавлено!');
-            }
 
-            if (file) {
-                let reader = new FileReader();
-                reader.onload = function(event) {
-                    saveAdWithImage(event.target.result);
-                };
-                reader.readAsDataURL(file);
-            } else {
-                saveAdWithImage(null);
+                if (response.ok) {
+                    alert('Объявление успешно добавлено в базу данных!');
+                    document.getElementById('adForm').reset();
+                    // Если хочешь, чтобы после отправки сразу перекидывало на ленту:
+                    // window.location.href = 'announce.html';
+                } else {
+                    const errData = await response.json();
+                    alert('Ошибка сервера: ' + (errData.error || 'Неизвестная ошибка'));
+                }
+            } catch (error) {
+                console.error('Ошибка связи:', error);
+                alert('Не удалось связаться с сервером. Проверь, запущен ли Python!');
             }
-        });
-    </script>
+        }
 
+        // 3. Логика обработки картинки (если она выбрана)
+        if (file) {
+            let reader = new FileReader();
+            reader.onload = function(event) {
+                // Когда картинка прочитана в base64, запускаем отправку
+                sendAdToPython(event.target.result);
+            };
+            reader.readAsDataURL(file);
+        } else {
+            // Если картинки нет, отправляем с null
+            sendAdToPython(null);
+        }
+    });
+</script>
         <div id="footer-container"></div>
-
         </main>
         <script src="ads.js"></script>
     </body>
